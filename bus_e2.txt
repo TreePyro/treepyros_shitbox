@@ -71,11 +71,6 @@ event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
                 "id" = BusID,
                 "pos" = Bus:pos()
             )
-            let Direction = Bus:toWorld(vec(-0.5,1,0))
-            #DriverSeat:ejectPod()
-            #owner():plySetPos(Bus:toWorld(Direction*50))
-            print(Bus:forward():toString())
-            print(Direction:toString())
             findInCone(Bus:pos(),Direction,3000,35)
             findClipToClass("gmod_wire_expression2")
             findClosest(Bus:pos()):sendRemoteEvent(Payload)
