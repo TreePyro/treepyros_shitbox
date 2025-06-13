@@ -9,6 +9,7 @@
     #To use, just place this E2 anywhere you like (panel recommended) and wire Entities [ARRAY] to an advanced entity marker.
     #The entity marker should be set up for all wire components, as well as the panel itself.
     #Press E on this E2 to show and hide the wire component panel.
+    #Do not parent this E2 to a gate, pressing E on such entities can be finnicky. You should parent this to the carbody.
 
 if(dupefinished()){reset()}
 if(first()){
