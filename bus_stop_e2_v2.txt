@@ -1,0 +1,175 @@
+@name shitbox/bus stop e2 v2
+@persist PeopleNum I E:entity
+@persist DudeSpawn:function Anims:table 
+@persist SpawnTimeMin SpawnTimeMax RandTime 
+@persist Right Forward Backward
+@persist MaxPeople
+@persist [SpecialRoutes RouteChances Routes PreferredRoutes]:table
+@persist Wave
+@model models/props_c17/signpole001.mdl
+
+if(dupefinished()){
+    reset()
+}
+if(first()){
+    PeopleNum = 0
+    I = 0
+    E = entity()
+    Wave = 0
+    
+    #The *60 exists to convert the time into minutes
+    SpawnTimeMin = 5
+    SpawnTimeMax = 5
+    
+    MaxPeople = 25
+    
+    #Controls how many people may spawn at a time.
+    MaxPersonCluster = 3
+    
+    #How far away people will spawn from the actual sign
+    #Short for "Min. Spawn Radius"
+    MSR = 10
+    
+    #People don't respect personal space in this e2. Be sure to give as much space for people as possible.
+    #Leave in the MSR value.
+    #Direction is based on the bus's perspective, not the sign.
+    Right = 260-MSR
+    Forward = 260-MSR
+    Backward = 640-MSR
+    
+    Routes = table()
+    SpecialRoutes = table()
+    PreferredRoutes = table()
+    RouteChances = table()
+    
+    
+    #Routes are defined in 3 different tables.
+    #SpecialRoutes takes priority when a passenger chooses where they want to go.
+    #Each special route is rolled from 1 to 100 to see if the passenger will select that bus.
+    #If the number is less than or equal to the RouteChance with the same index, the passenger will board that bus.
+    #If all special routes fail, then the passenger will randomly select between the Routes without bias.
+    
+    #Passengers board on buses with an identical ID to their preferred route.
+    #An ID can be set for a bus by placing a constant variable string on the front of the bus.
+    #Passengers will board a nearby bus when the .pickup command is used.
+    
+    #SpecialRoutes[1,string] = "NB 2"
+    
+    
+    #RouteChances[1,number] = 35
+    
+    
+    Routes[1,string] = "NB 2"
+    Routes[2,string] = "SB 2"
+    Routes[3,string] = "NB 3"
+    
+    Anims = table(
+        "idle_subtle",
+        "idle_angry",
+        "lineidle01",
+        "lineidle03",
+        "sit_ground"
+    )
+    
+    holoCreate(0)
+    holoModel(0,"models/props_c17/streetsign003b.mdl")
+    holoParent(0,E)
+    holoAng(0,E:toWorld(ang(0,-90,0)))
+    holoPos(0,E:toWorld(vec(1.29,0,89.71)))
+
+    DudeSpawn = function(){
+        if(PeopleNum<MaxPeople){
+            PeopleNum++
+            I++
+            holoCreate(I)
+            let Randomizer = randint(1,7)
+            let Randomizer2 = randint(0,2)
+            
+            if(Randomizer == 5 & Randomizer2 == 0){
+                Randomizer2 = randint(1,2)
+            }
+            let Model = "models/Humans/Group0" + (Randomizer2+1) + "/" + (Randomizer2 ? "male" : "Female") + "_0" + (Randomizer+Randomizer2) + ".mdl"
+            holoModel(I,Model)
+            let Anim = Anims[randint(1,Anims:count()),string]
+            holoAnim(I,Anim)
+            #print(Anim)
+            
+            let Pos = vec(randint(Backward,Forward)+MSR,randint(0,Right)+MSR,0)
+            #print(Pos:toString())
+            holoPos(I,E:toWorld(Pos))
+            holoAng(I,E:toWorld(ang(0,random(15,-105),0)))
+            #holoAng(I,E:toWorld(ang(0,-100,0)))
+            holoParent(I,E)
+            
+            let PreferredRoute = "null"
+            
+            for(X = 1,SpecialRoutes:count()){
+                if(PreferredRoute == "null"){
+                    if(random(0,100) <= RouteChances[X,number]){
+                        PreferredRoute = SpecialRoutes[X,string]
+                    }
+                }
+            }
+            
+            if(PreferredRoute=="null"){
+                PreferredRoute = Routes[randint(1,Routes:count()),string]
+            }
+            
+            PreferredRoutes[I,string] = PreferredRoute
+        }
+        RandTime = random(SpawnTimeMin,SpawnTimeMax)
+        timer(RandTime,DudeSpawn)
+        #print(RandTime)
+    }
+    RandTime = random(SpawnTimeMin,SpawnTimeMax)
+    timer(RandTime,DudeSpawn)
+    #print(RandTime)
+}
+
+event remote(Sender:entity,_:entity,Info:table){
+    if(Sender:getName()=="shitbox/bus e2"){
+        if(Info["horn",number]){
+                foreach(X:number,Route:string = PreferredRoutes){
+                    if(Route==Info["id",string]){
+                        let HoloEnt = holoEntity(X)
+                        holoAnim(X,"wave")
+                        holoAng(X,(HoloEnt:pos()-Info["pos",vector]):toAngle()+ang(0,180,0))
+                        Wave = 1
+                        break
+                    }
+                }
+                if(!Wave){
+                    Sender:sendRemoteEvent(table())
+                }
+            }else{
+            if(E:pos():distance(Info["pos",vector])<512){
+                PassengersPickup = 0
+                let RouteChoices = table()
+                foreach(X:number,Route:string = PreferredRoutes){
+                    #print("Passenger " + X + " who loves " + Route + " is deciding to get on the " + Info["id",string])
+                    if(Route==Info["id",string]){
+                        PeopleNum--
+                        PassengersPickup++
+                        holoDelete(X)
+                    }else{
+                        RouteChoices[X,string] = Route
+                    }
+                    PreferredRoutes = RouteChoices
+                }
+                let Payload = table(
+                    "passengers" = PassengersPickup,
+                    "routes" = PreferredRoutes
+                )
+                Wave = 0
+                Sender:sendRemoteEvent(Payload)
+            }
+        }
+    }
+}
+
+event chipUsed(Ply:entity){
+    if(Ply==owner()){
+        print(PreferredRoutes:toString())
+    }
+    Wave = 0
+}

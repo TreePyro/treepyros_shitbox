@@ -1,0 +1,86 @@
+@name shitbox/bus stop e2
+@outputs PeopleNum Business Radius E:entity
+@persist DudeSpawn:function Anims:table SpawnTimeMin SpawnTimeMax RandTime Right Forward MaxPeople
+@model models/props_c17/signpole001.mdl
+
+if(dupefinished()){
+    reset()
+}
+if(first()){
+    PeopleNum = 0
+    E = entity()
+    
+    #In minutes
+    SpawnTimeMin = 5
+    SpawnTimeMax = 15
+    
+    MaxPeople = 10
+    
+    #How far away people will spawn from the actual sign
+    #Short for "Min. Spawn Radius"
+    MSR = 5
+    
+    #People don't respect personal space in this e2. Be sure to give more space for people when possible if you have higher maxpeople.
+    #Leave in the MSR value. 
+    #Direction is based on the bus's perspective, not the sign.
+    Right = 80-MSR
+    Forward = 78-MSR
+    Backward = 228-MSR
+    
+    Anims = table(
+        "plazaidle1",
+        "plazaidle2",
+        "plazaidle3",
+        "plazaidle4",
+        "idle_subtle",
+        "idle_angry",
+        "lineidle01",
+        "lineidle02",
+        "lineidle03",
+        "canals_mary_preidle",
+        "canals_mary_postidle"
+    )
+    
+    holoCreate(0)
+    holoModel(0,"models/props_c17/streetsign003b.mdl")
+    holoParent(0,E)
+    holoAng(0,E:toWorld(ang(0,-90,0)))
+    holoPos(0,E:toWorld(vec(1.29,0,89.71)))
+
+    DudeSpawn = function(){
+        if(PeopleNum<MaxPeople){
+            PeopleNum++
+            let I = PeopleNum
+            holoCreate(I)
+            let Randomizer = randint(1,7)
+            let Randomizer2 = randint(0,2)
+            
+            if(Randomizer == 5 & Randomizer2 == 0){
+                Randomizer2 = randint(1,2)
+            }
+            let Model = "models/Humans/Group0" + (Randomizer2+1) + "/" + (Randomizer2 ? "male" : "Female") + "_0" + (Randomizer+Randomizer2) + ".mdl"
+            holoAnim(I,Anims[randint(1,Anims:count()),string])
+            holoModel(I,Model)
+            
+            let Pos = vec(random(Backward,Forward)+MSR,random(0,Right)+MSR,0)
+            #print(Pos:toString())
+            holoPos(I,E:toWorld(Pos))
+            holoAng(I,E:toWorld(ang(0,random(15,-105),0)))
+            #holoAng(I,E:toWorld(ang(0,-100,0)))
+            holoParent(I,E)
+            
+            RandTime = random(SpawnTimeMin,SpawnTimeMax)
+            timer(RandTime*60,DudeSpawn)
+            #print(RandTime)
+        }
+    }
+    RandTime = random(SpawnTimeMin,SpawnTimeMax)
+    timer(RandTime*60,DudeSpawn)
+    #print(RandTime)
+}
+
+event chipUsed(_:entity){
+    hint("Picked up " + PeopleNum + " passengers!",4)
+    reset()
+}
+

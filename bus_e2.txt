@@ -1,0 +1,162 @@
+@name shitbox/bus e2
+@inputs BusInfo:string PassengerSeats:array [Bus Driver DriverSeat]:entity DisableStops
+@outputs [Output RequestOutput BusID]:string StopRequest PassengerCount MPH
+@persist T BusInfoE:array MaxPassengers BusNum:string
+
+if(first()){
+    T=0
+    StopRequest = 0
+    MPH = 0
+    BusNum = "0"
+    
+    
+    PassengerCount = 0
+    MaxPassengers = 35
+    
+    
+    BusInfoE = BusInfo:explode("/")
+    RequestOutput = "Press Space to request a stop. You will be dropped off at the next available stop."
+    let DisplayTimer = function(){
+        T++
+        if(T>BusInfoE:count()-1){
+            T=1
+        }
+        let Str = BusInfoE[T+1,string]
+        Output = T>1 ? Str : BusNum + " " +Str
+        #print(T)
+        #print(BusInfoE)
+    }
+    let PassengerTimer = function(){
+        if(!DisableStops & !StopRequest & MPH>5){
+            let Win = 0
+            #print("Begin rolling")
+            for(X=1,PassengerCount){
+                let Rando = randint(0,75)
+                #print(Rando)
+                if(Rando==0){
+                    Win = 1
+                }
+            }
+            if(Win){
+                StopRequest = 1
+            }
+        }
+    }
+    timer(2,-1,DisplayTimer)
+    timer(5,-1,PassengerTimer)
+}
+
+if(~BusInfo|first()){
+    BusInfoE = BusInfo:explode("/")
+    BusID = BusInfoE[1,string]
+    BusNum = BusID:explode(" ")[2,string]
+}
+
+event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
+    foreach(X:number,Pasajero:entity = PassengerSeats){
+        if(Pasajero:driver() == Ply & Key == "space" & Dn & !StopRequest & !DisableStops){
+            StopRequest = 1
+            DriverSeat:hintDriver("Stop requested by Player passenger",4)
+        }
+    }
+    
+    if(Ply == Driver){
+        if(Key=="1" & Dn){
+            StopRequest = 0
+        }
+        
+        if(Key=="h" & Dn){
+            let Payload = table(
+                "horn" = 1,
+                "id" = BusID,
+                "pos" = Bus:pos()
+            )
+            let Direction = Bus:toWorld(vec(-0.5,1,0))
+            #DriverSeat:ejectPod()
+            #owner():plySetPos(Bus:toWorld(Direction*50))
+            print(Bus:forward():toString())
+            print(Direction:toString())
+            findInCone(Bus:pos(),Direction,3000,35)
+            findClipToClass("gmod_wire_expression2")
+            findClosest(Bus:pos()):sendRemoteEvent(Payload)
+        }
+    }
+    
+}
+
+event chat(Ply:entity,Msg:string,_:number){
+    if(Ply==Driver){
+        if(Msg[1] == "."){
+            hideChat(1)
+        }
+        let Xplode = Msg:explode(" ")
+        if(Xplode[1,string] == ".busadd"){
+            PassengerCount+=Xplode[2,string]:toNumber()
+            DriverSeat:hintDriver("Added " + Xplode[2,string] + " passengers to the bus.",4)
+            if(PassengerCount>MaxPassengers){
+                DriverSeat:hintDriver("Passenger count overflowed!",4)
+                PassengerCount = MaxPassengers
+            }
+        }
+        if(Xplode[1,string] == ".busstop"){
+            let Exitees = ceil(random(1,6)*((Xplode[2,string]:toNumber()+1)/2))
+            let RandomAdd = randint(0,5)
+            #let RandomAdd = 0
+            #print("Rolled " + Exitees + " for Exitees; " + RandomAdd + " for RandomAdd.")
+            if(!RandomAdd){
+                Exitees+=randint(1,Exitees)
+            }
+            if(PassengerCount-Exitees<=0){
+                DriverSeat:hintDriver(PassengerCount + " passengers have gotten off the bus. The bus is now empty.",4)
+                PassengerCount = 0
+            }else{
+                DriverSeat:hintDriver(Exitees + " passengers have gotten off the bus.",4)
+                PassengerCount-=Exitees
+            }
+        }
+        if(Xplode[1,string] == ".pickup" & floor(MPH) == 0){
+            let T = table(
+                "pos" = Bus:pos(),
+                "id" = BusID
+            )
+            broadcastRemoteEvent(T)
+        }
+    }
+}
+
+event tick(){
+    MPH = abs(toUnit("mph",Bus:velL():x()))*4/3
+    
+    if(changed(StopRequest)){
+            if(StopRequest){
+                RequestOutput = "Stop Requested"
+                Bus:soundPlay(0,0,"hl1/fvox/bell.wav")
+            }else{
+                RequestOutput = "Press Space to request a stop. You will be dropped off at the next bus station."
+        }
+    }
+}
+
+event remote(Sender:entity,_:entity,T:table){
+    if(Sender:getName() == "shitbox/bus stop e2 v2"){
+        let NewPeople = T["passengers",number]
+        if(NewPeople){
+            DriverSeat:hintDriver(NewPeople + " passengers got on the bus!",4)
+            PassengerCount+=NewPeople
+        }else{
+            DriverSeat:printDriver("No passengers at this stop want to board " + BusID+"!")
+            DriverSeat:printDriver(T["routes",table]:toString())
+        }
+    }
+}
+
+if(~DisableStops){
+    if(DisableStops){
+        StopRequest = 0
+        RequestOutput = "Currently in a no-stop zone. Stop requests will be enabled when approaching a city."
+    }
+    
+    if(!DisableStops){
+        RequestOutput = "Stop Requests have been re-enabled. Request a stop by pressing Space."
+    }
+}
