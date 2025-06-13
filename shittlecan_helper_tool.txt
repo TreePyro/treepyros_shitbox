@@ -1,0 +1,31 @@
+@name Shittlecan helper tool
+@persist [O Ent]:entity
+
+#To use this E2, simply leave it on the ground somewhere.
+#Right click an entity with the pistol and right click another entity to get the 1st entity's position and angles relative to the 2nd entity
+#The E2 will round the pos to the 2nd decimal (123.1078 -> 123.11) and the angle to the first ten digit (96.71 -> 97)
+
+
+
+
+
+
+if(dupefinished()){reset()}
+if(first()){
+    O = owner()
+    Ent = noentity()
+}
+
+event keyPressed(Ply:entity, Key:string, Down:number, Bind:string){
+    if(Ply == O & O:weapon():type() == "weapon_pistol" & Bind == "attack2" & Down){
+        let AimEnt = O:aimEntity()
+        if(Ent:isValid()){
+            print(round(AimEnt:toLocal(Ent:pos()),2))
+            print(round(AimEnt:toLocal(Ent:angles())))
+            Ent = noentity()
+        }else{
+            Ent = AimEnt
+            print(AimEnt:toString() + " selected for relative pos & ang scanning")
+        }
+    }
+}

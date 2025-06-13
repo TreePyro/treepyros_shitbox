@@ -1,0 +1,28 @@
+@name shitbox/Hide & Show panels
+@inputs Entities:array
+@outputs 
+@persist O:entity
+@persist Toggle
+@strict
+
+    #For hiding & showing a wire component panel on builds.
+    #To use, just place this E2 anywhere you like (panel recommended) and wire Entities [ARRAY] to an advanced entity marker.
+    #The entity marker should be set up for all wire components, as well as the panel itself.
+    #Press E on this E2 to show and hide the wire component panel.
+
+if(dupefinished()){reset()}
+if(first()){
+    O = owner()
+    Toggle = 0
+}
+
+event chipUsed(Player:entity){
+    if(Player == O){
+        
+        Toggle = !Toggle
+        
+        foreach(X:number,Ent:entity = Entities){
+            Ent:setAlpha(Toggle*255)
+        }
+    }
+}
