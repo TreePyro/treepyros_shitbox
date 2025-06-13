@@ -18,10 +18,10 @@ if(first()){
     Wave = 0
     
     #The *60 exists to convert the time into minutes
-    SpawnTimeMin = 5
-    SpawnTimeMax = 5
+    SpawnTimeMin = 5*60
+    SpawnTimeMax = 40*60
     
-    MaxPeople = 25
+    MaxPeople = 5
     
     #Controls how many people may spawn at a time.
     MaxPersonCluster = 3
@@ -33,9 +33,9 @@ if(first()){
     #People don't respect personal space in this e2. Be sure to give as much space for people as possible.
     #Leave in the MSR value.
     #Direction is based on the bus's perspective, not the sign.
-    Right = 260-MSR
-    Forward = 260-MSR
-    Backward = 640-MSR
+    Right = 170-MSR
+    Forward = 50-MSR
+    Backward = 170-MSR
     
     Routes = table()
     SpecialRoutes = table()
@@ -52,6 +52,7 @@ if(first()){
     #Passengers board on buses with an identical ID to their preferred route.
     #An ID can be set for a bus by placing a constant variable string on the front of the bus.
     #Passengers will board a nearby bus when the .pickup command is used.
+    #Recommended format: "XX #" Where XX is replaced with NB, SB for Northbound and Southbound, # is of course replaced with the route number.
     
     #SpecialRoutes[1,string] = "NB 2"
     
@@ -60,8 +61,6 @@ if(first()){
     
     
     Routes[1,string] = "NB 2"
-    Routes[2,string] = "SB 2"
-    Routes[3,string] = "NB 3"
     
     Anims = table(
         "idle_subtle",
