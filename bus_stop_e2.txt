@@ -3,6 +3,9 @@
 @persist DudeSpawn:function Anims:table SpawnTimeMin SpawnTimeMax RandTime Right Forward MaxPeople
 @model models/props_c17/signpole001.mdl
 
+    #This is a less advanced version of the bus stop E2, for systems that do not need more than 1 route.
+    #This E2 does not support the ".pickup" command. Press E on the bus stop and use ".busadd #" instead.
+
 if(dupefinished()){
     reset()
 }
@@ -11,8 +14,8 @@ if(first()){
     E = entity()
     
     #In minutes
-    SpawnTimeMin = 5
-    SpawnTimeMax = 15
+    SpawnTimeMin = 5*60
+    SpawnTimeMax = 15*60
     
     MaxPeople = 10
     
@@ -70,12 +73,12 @@ if(first()){
             holoParent(I,E)
             
             RandTime = random(SpawnTimeMin,SpawnTimeMax)
-            timer(RandTime*60,DudeSpawn)
+            timer(RandTime,DudeSpawn)
             #print(RandTime)
         }
     }
     RandTime = random(SpawnTimeMin,SpawnTimeMax)
-    timer(RandTime*60,DudeSpawn)
+    timer(RandTime,DudeSpawn)
     #print(RandTime)
 }
 
