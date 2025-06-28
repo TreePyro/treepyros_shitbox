@@ -1,0 +1,52 @@
+@name shitbox/one-man two man crew
+@inputs EngineerSeat:entity
+@outputs [O ConductorSeat]:entity ConductorPos:table Toggle
+@strict
+
+if(first()|dupefinished()){
+    O = owner()
+    ConductorSeat = noentity()
+    ConductorPos = table(
+        "pos" = O:pos(),
+        "ang" = O:angles()
+    )
+    Toggle = 0
+}
+
+event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
+    if(Ply == O & Key == "0" & Dn){
+        
+        if(O:vehicle() == EngineerSeat){
+            Toggle = 1
+        }else{
+            Toggle = !Toggle
+        }
+        
+        if(!Toggle){
+            if(O:inVehicle()){
+                ConductorSeat = O:vehicle()
+                ConductorPos = table(
+                    "pos" = O:vehicle():pos(),
+                    "ang" = O:vehicle():angles()
+                )
+                
+                O:plyExitVehicle()
+                O:plyEnterVehicle(EngineerSeat)
+            }else{
+                ConductorPos = table(
+                    "pos" = O:pos(),
+                    "ang" = O:angles()
+                )
+                O:plyEnterVehicle(EngineerSeat)
+            }
+        }else{
+            O:plyExitVehicle()
+            if(ConductorSeat:isValid()){
+                O:plyEnterVehicle(ConductorSeat)
+            }else{
+                O:plySetPos(ConductorPos["pos",vector])
+                O:plySetAng(ConductorPos["ang",angle])
+            }
+        }
+    }
+}
