@@ -1,9 +1,53 @@
 @name shitbox/one-man two man crew
-@inputs EngineerSeat:entity
+@inputs EngineerSeat:entity Teleport Enable
 @outputs [O ConductorSeat]:entity ConductorPos:table Toggle
-@strict
+@persist [ConductorModel StandAnim AirAnim AttachmentName]:string LockPod
+
 
 if(first()|dupefinished()){
+
+#[
+
+    Thank you for using the One-Man Two Man Crew E2
+    This E2 can be found in the Tree Pyro's Shitbox Github repo:
+    https://github.com/TreePyro/treepyros_shitbox
+    
+    This E2 works but teleporting you to the Engineer Seat whenever you're not in it
+    It also records the position you were at when you teleported, as well as what seat you were in
+    A holo model is placed where the aforementioned recorded position is
+    
+    To set this up: All you need to do is place this e2 literally anywhere.
+    ->Wire "EngineerSeat" to the seat that you drive your vehicle from
+    ->Wire "Teleport" to a button you press to teleport (Recommended: Wiremod Numpad Input)
+    ->Wire "Enable" to a toggled button that is only activated when you're using the vehicle's controls
+    (Note: Do not use "Active", as it will disable your ability to teleport back into the engineer seat)
+    
+]#
+
+
+    #If you'd like, you can also change the model that the "conductor" uses here:
+    ConductorModel = "models/player/group03/male_07.mdl"
+    
+    #And you can also set the animations your conductor uses here:
+    StandAnim = "idle_all_01"
+    AirAnim = "swim_idle_all"
+    
+    #Set this to 1 if you don't want your conductor's seat to be used whenever he's riding it.
+    LockPod = 1
+    
+    #You absolutely should not change anything below this line unless you know what you're doing.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AttachmentName = "vehicle_feet_passenger0"
     O = owner()
     ConductorSeat = noentity()
     ConductorPos = table(
@@ -11,41 +55,56 @@ if(first()|dupefinished()){
         "ang" = O:angles()
     )
     Toggle = 0
+    
+    holoCreate(0)
+    holoModel(0,ConductorModel)
+    holoPos(0,vec(0))
 }
 
 event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
-    if(Ply == O & Key == "0" & Dn){
-        
-        if(O:vehicle() == EngineerSeat){
-            Toggle = 1
-        }else{
-            Toggle = !Toggle
-        }
-        
-        if(!Toggle){
+    if(Ply == O & Teleport & Enable){
+        if(O:vehicle() != EngineerSeat){
             if(O:inVehicle()){
                 ConductorSeat = O:vehicle()
+                ConductorSeat:lockPod(LockPod)
                 ConductorPos = table(
                     "pos" = O:vehicle():pos(),
-                    "ang" = O:vehicle():angles()
+                    "ang" = O:vehicle():angles(),
+                    "noclip" = 0
                 )
+                
+                holoPos(0,ConductorSeat:attachmentPos(AttachmentName))
+                holoParentAttachment(0,ConductorSeat,AttachmentName)
+                holoAng(0,ConductorSeat:attachmentAng(AttachmentName))
+                holoAnim(0,"sit")
                 
                 O:plyExitVehicle()
                 O:plyEnterVehicle(EngineerSeat)
             }else{
+                ConductorSeat:lockPod(0)
+                ConductorSeat = noentity()
                 ConductorPos = table(
                     "pos" = O:pos(),
-                    "ang" = O:angles()
+                    "ang" = O:angles(),
+                    "noclip" = O:inNoclip()
                 )
                 O:plyEnterVehicle(EngineerSeat)
+                
+                holoUnparent(0)
+                holoPos(0,ConductorPos["pos",vector])
+                holoAng(0,ConductorPos["ang",angle]:setRoll(0))
+                holoAnim(0,O:isOnGround() ? StandAnim : AirAnim)
             }
         }else{
+            holoPos(0,vec(0))
             O:plyExitVehicle()
             if(ConductorSeat:isValid()){
+                ConductorSeat:lockPod(0)
                 O:plyEnterVehicle(ConductorSeat)
             }else{
                 O:plySetPos(ConductorPos["pos",vector])
                 O:plySetAng(ConductorPos["ang",angle])
+                O:plyNoclip(ConductorPos["noclip",number])
             }
         }
     }
