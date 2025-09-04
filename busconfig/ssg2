@@ -1,0 +1,100 @@
+@name shitbox/busconfig/ssg2
+@persist Routes:table
+
+#Note that The K-Line is omitted from this E2
+#The K-Line is unique and will not fit properly if used with this config
+
+Locations = table(
+    "Wolfram Cafeteria/Wolfram/Cafeteria",    #1
+    "BTLN Dragon's Rock; connections to routes 2, 16, and BTLN Trains/BTLN/Dragon's Rock", #2
+    "Redwall Circle; connections to routes 3 and 16/Redwall/Central Circle", #3
+    "BTLN Redwall; connections to routes 3, 16, and BTLN Trains/BTLN/Redwall", #4
+    "Shoppes @ Sandstone; connections to routes 2, 3, and 16/Shoppes/at Sandstone", #5
+    "Sandstone Power Park & Ride; connections to routes 2 and 16/Sandstone/Park 'n' Ride", #6
+    "BTLN Thunder's Bane; connections to routes 2, 3, and BTLN Trains/BTLN/Thunder's Bane", #7
+    "Kahuna Government Center; connections to routes 3, 5, and K-Line/Kahuna/Gov't Center", #8
+    "Kahuna Public Deli; connections to routes 3 and K-Line/Kahuna/Public Deli", #9
+    "BTLN Kahuna; Connections to routes 3, 5, K-Line, and BTLN Trains/BTLN/Kahuna", #10
+    "Automotive Elevator/Crucible/Elevator", #11
+    "Town of Titan/Town of/Titan", #12
+    "Crucible Downtown Offices/Crucible/Dtwn Offices", #13
+    "Crucible Gas/Crucible/Gas Station", #14
+    "BTLN Crucible/BTLN/Crucible", #15
+    "Central Crucible Bus Terminal; connections to routes 5, 6, C-Line, and Rockfort Express/Crucible/Central Term." #16
+    )
+
+Routes = table(
+    "SB 2" = table(
+        Locations[2,string],
+        Locations[5,string],
+        Locations[6,string],
+        Locations[7,string]
+        ),
+    "NB 2" = table(
+        Locations[6,string],
+        Locations[5,string],
+        Locations[2,string],
+        Locations[1,string]
+    ),
+    
+    
+    "SB 3" = table(
+        Locations[3,string],
+        Locations[5,string],
+        Locations[7,string],
+        Locations[8,string],
+        Locations[9,string],
+        Locations[10,string]
+    ),
+    
+    "NB 3" = table(
+        Locations[9,string],
+        Locations[8,string],
+        Locations[7,string],
+        Locations[5,string],
+        Locations[3,string],
+        Locations[4,string]
+    ),
+    
+    "SB 16" = table(
+        Locations[5,string],
+        Locations[6,string],
+        Locations[5,string],
+        Locations[3,string],
+        Locations[4,string]
+    ),
+    
+    #SB 16 = Drock -> Park n Ride -> Redwall
+    
+    "NB 16" = table(
+        Locations[3,string],
+        Locations[5,string],
+        Locations[6,string],
+        Locations[5,string],
+        Locations[2,string]
+    ),
+    
+    #NB 16 = Redwall -> Park n Ride -> Drock
+    
+    
+    "SB 5" = table(
+        Locations[10,string],
+        Locations[11,string],
+        Locations[12,string],
+        Locations[13,string],
+        Locations[14,string],
+        Locations[15,string],
+        Locations[16,string]
+    ),
+    
+    "NB 5" = table(
+        Locations[15,string],
+        Locations[14,string],
+        Locations[13,string],
+        Locations[12,string],
+        Locations[11,string],
+        Locations[10,string],
+        Locations[8,string]
+    )
+)
+    
