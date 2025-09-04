@@ -1,20 +1,43 @@
 @name shitbox/bus e2
-@inputs BusInfo:string PassengerSeats:array [Bus Driver DriverSeat]:entity DisableStops
-@outputs [Output RequestOutput BusID]:string StopRequest PassengerCount MPH
-@persist T BusInfoE:array MaxPassengers BusNum:string
+@inputs PassengerSeats:array [Bus Driver DriverSeat]:entity DisableStops
+@outputs [DestLine1 DestLine2 RequestOutput BusID]:string StopRequest PassengerCount MPH
+@persist T [BusInfoE BusInfo2E]:array MaxPassengers [BusInfo BusInfo2 BusNum]:string
+@persist StationIndex Route:table
 
 if(first()){
+    
+    #Optional. Import pre-planned route config.
+    #include "shitbox/busconfig/ssg2"
+    
+    MaxPassengers = 35
+    
+    RequestChance = 50
+    #Default 75
+    
+    let ArrowModel = "models/sprops/misc/alphanum/alphanum_arrow_b.mdl"
+    
+    #Init
+    #Don't touch anything below this line unless you know what you're doing
+    PassengerCount = 0
     T=0
     StopRequest = 0
     MPH = 0
-    BusNum = "0"
+    BusNum = ""
+    StationIndex = 0
+    BusID = ""
+    BusInfo = ""
+    BusInfo2 = ""
+    BusInfoE = array()
+    BusInfo2E = array()
     
+    holoCreate(0)
+    holoModel(0,ArrowModel)
+    holoMaterial(0,"debug/debugdrawflat")
+    holoAng(0,ang(180,0,0))
+    holoColor(0,vec(255,0,0))
+    holoPos(0,vec(0))
+    Route = table()
     
-    PassengerCount = 0
-    MaxPassengers = 35
-    
-    
-    BusInfoE = BusInfo:explode("/")
     RequestOutput = "Press Space to request a stop. You will be dropped off at the next available stop."
     let DisplayTimer = function(){
         T++
@@ -22,16 +45,18 @@ if(first()){
             T=1
         }
         let Str = BusInfoE[T+1,string]
-        Output = T>1 ? Str : BusNum + " " +Str
+        DestLine1 = T>1 ? Str : BusNum + " " +Str
+        DestLine2 = BusInfo2E[T,string]
         #print(T)
         #print(BusInfoE)
+        #print(BusInfo2E)
     }
     let PassengerTimer = function(){
         if(!DisableStops & !StopRequest & MPH>5){
             let Win = 0
             #print("Begin rolling")
-            for(X=1,PassengerCount){
-                let Rando = randint(0,75)
+            for(_=1,PassengerCount){
+                let Rando = randint(0,RequestChance)
                 #print(Rando)
                 if(Rando==0){
                     Win = 1
@@ -46,23 +71,62 @@ if(first()){
     timer(5,-1,PassengerTimer)
 }
 
-if(~BusInfo|first()){
+function stationAnnouncement(Type:number){
+    let NextStop = Route[StationIndex,string]:explode("/")[1,string]
+    if(Type==0){
+        Bus:soundPlay(0,0,"ui/buttonclick.wav")
+        DriverSeat:hintDriver("Now approaching: " + NextStop,30)
+        foreach(_:number,Passenger:entity = PassengerSeats){
+            Passenger:hintDriver("Now approaching: " + NextStop,30)
+        }
+    }
+    if(Type==1){
+        Bus:soundPlay(0,0,"ui/buttonclick.wav")
+        DriverSeat:hintDriver("Route finished.",4)
+        foreach(_:number,Passenger:entity = PassengerSeats){
+            Passenger:hintDriver("End of route. Now approaching: " + NextStop,30)
+        }
+    }
+    if(Type==2){
+        DriverSeat:hintDriver("Starting route: " + BusID,30)
+        foreach(_:number,Passenger:entity = PassengerSeats){
+            Passenger:hintDriver("Welcome aboard. Beginning route: " + BusID,30)
+        }
+        
+    }
+}
+
+function updateRoute(){
+    let NextStop = Route[StationIndex,string]:explode("/")[2,string]
+    let FinalStop = Route[Route:count(),string]:explode("/")[2,string]
+    let NextStop2 = Route[StationIndex,string]:explode("/")[3,string]
+    let FinalStop2 = Route[Route:count(),string]:explode("/")[3,string]
+    
+    if(StationIndex < Route:count()){
+        BusInfo = BusID + "/" + FinalStop + "/via " + NextStop
+        BusInfo2 = FinalStop2 + "/" + NextStop2
+    }else{
+        BusInfo = BusID + "/" + FinalStop
+        BusInfo2 = FinalStop2
+    }
+    
     BusInfoE = BusInfo:explode("/")
-    BusID = BusInfoE[1,string]
-    BusNum = BusID:explode(" ")[2,string]
+    BusInfo2E = BusInfo2:explode("/")
 }
 
 event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
-    foreach(X:number,Pasajero:entity = PassengerSeats){
-        if(Pasajero:driver() == Ply & Key == "space" & Dn & !StopRequest & !DisableStops){
-            StopRequest = 1
-            DriverSeat:hintDriver("Stop requested by Player passenger",4)
-        }
-    }
     
     if(Ply == Driver){
         if(Key=="1" & Dn){
             StopRequest = 0
+            break
+        }
+        
+        if(Key=="mouse_middle" & Dn & StationIndex<=Route:count()){
+            stationAnnouncement(StationIndex == Route:count())
+            StationIndex++
+            updateRoute()
+            break
         }
         
         if(Key=="h" & Dn){
@@ -71,9 +135,28 @@ event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
                 "id" = BusID,
                 "pos" = Bus:pos()
             )
-            findInCone(Bus:pos(),Direction,3000,35)
+            findInSphere(Driver:pos(),3000)
             findClipToClass("gmod_wire_expression2")
-            findClosest(Bus:pos()):sendRemoteEvent(Payload)
+            findClipToRegion(Bus:pos(),Bus:right())
+            findClipToRegion(Bus:pos(),Bus:forward())
+            let Stop = findClosest(Driver:pos())
+            #holoPos(0,Bus:toWorld(Bus:pos()-Bus:toWorld(vec(-15))))
+            Stop:sendRemoteEvent(Payload)
+            
+            holoEntity(0):soundPlay(1,0,"ui/medic_alert.wav")
+            holoPos(0,Stop:pos()+vec(0,0,125))
+            stoptimer("hidearrow")
+            timer("hidearrow",7,function(){ holoPos(0,vec(0)) })
+            break
+        }
+        break
+    }
+    
+    
+    foreach(_:number,Pasajero:entity = PassengerSeats){
+        if(Pasajero:driver() == Ply & Key == "space" & Dn & !StopRequest & !DisableStops){
+            StopRequest = 1
+            DriverSeat:hintDriver("Stop requested by Player passenger",4)
         }
     }
     
@@ -109,12 +192,38 @@ event chat(Ply:entity,Msg:string,_:number){
                 PassengerCount-=Exitees
             }
         }
-        if(Xplode[1,string] == ".pickup" & floor(MPH) == 0){
-            let T = table(
-                "pos" = Bus:pos(),
-                "id" = BusID
-            )
-            broadcastRemoteEvent(T)
+        if(Xplode[1,string] == ".pickup"){
+            if(floor(MPH) == 0){
+                let T = table("pos" = Bus:pos(),"id" = BusID)
+                broadcastRemoteEvent(T)
+            }else{
+                DriverSeat:hintDriver("The bus needs to be stopped to pick up passengers!",4)
+            }
+        }
+        if(Xplode[1,string] == ".route"){
+            BusID = Xplode:concat(" ",2)
+            BusNum = BusID:explode(" ")[2,string]
+            StationIndex = 1
+            if(Routes:exists(BusID)){
+                Route = Routes[BusID,table]
+                stationAnnouncement(2)
+                updateRoute()
+            }else{
+                Route = table()
+            }
+        }
+        if(Xplode[1,string] == ".print"){
+            print(Route)
+            print(BusInfo)
+            print(BusInfo2)
+        }
+        if(Xplode[1,string] == ".index"){
+            if(Route){
+                StationIndex = Xplode[2,string]:toNumber()
+                updateRoute()
+            }else{
+                DriverSeat:hintDriver("Can't set index with no route!",5)
+            }
         }
     }
 }
@@ -130,6 +239,8 @@ event tick(){
                 RequestOutput = "Press Space to request a stop. You will be dropped off at the next bus station."
         }
     }
+    
+    holoAng(0,holoEntity(0):angles() + ang(0,15,0))
 }
 
 event remote(Sender:entity,_:entity,T:table){
