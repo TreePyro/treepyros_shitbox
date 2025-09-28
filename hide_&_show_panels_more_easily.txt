@@ -22,7 +22,7 @@ event chipUsed(Player:entity){
         
         Toggle = !Toggle
         
-        foreach(X:number,Ent:entity = Entities){
+        foreach(_:number,Ent:entity = Entities){
             Ent:setAlpha(Toggle*255)
         }
     }
