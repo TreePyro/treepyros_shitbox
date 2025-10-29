@@ -13,8 +13,12 @@
 
 if(dupefinished()){reset()}
 if(first()){
-    O = owner()
+    #You can change this value if you want the panel to be visible on spawn. Note that the E2 does not hide/show entities on spawn.
+    #Default = 0 (Hidden)
     Toggle = 0
+    
+    #Don't touch anything below this line unless you know what you're doing.
+    O = owner()
 }
 
 event chipUsed(Player:entity){
