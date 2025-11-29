@@ -1,0 +1,92 @@
+@name shitbox/FEC 427 Cab Seat E2
+@inputs [Engineer Conductor Brakeman]:entity Stepseats:array
+@outputs 
+@persist 
+#[
+No config needed! However you may be wondering how to use this e2.
+
+Step 1: Place anywhere on your locomotive. Absolutely anywhere.
+Step 2: Both features are optional, so follow the below instructions based on which features you want to use
+
+---Kick players out of cab seats---
+    Step 1: Wire the Engineer, Conductor, and Brakeman inputs to the "Create Entity[ENTITY]" or "entity[ENTITY]" outputs on each respective seat.
+    Step 2: Press E on any seats that you want to kick people out of. If you want, you can hold the key down to enter the seat after it kicks them.
+    
+---Warp from stepladders to cab seats---
+    Step 1: Spawn an Advanced Entity Marker anywhere on your locomotive.
+    Step 2: Link the pods on your stepladders to the advanced entity marker
+    Step 3: Wire Stepseats[ARRAY] from this E2 to Entities[ARRAY] from the entity marker.
+    Step 4: Press 1 for engineer seat, 2 for conductor seat, and 3 for brakeman seat
+    Note: Warping from stepladders to cab seats as the owner of this e2 WILL kick players out of the according cab seat.
+    
+]#
+
+event playerUse(Ply:entity,Ent:entity){
+    if(Ply == owner()){
+        if(Ent==Engineer|Ent==Conductor|Ent==Brakeman){
+            if(Ent:driver()){
+                timer(0.3,function(){
+                    Ent:ejectPod()
+                    if(owner():keyPressed("e")){
+                        owner():plyEnterVehicle(Ent)
+                    }
+                })
+            }
+        }
+    }
+}
+        
+
+event keyPressed(Ply:entity,Key:string,Down:number,_:string){
+    if(->Stepseats){
+        if(Down){
+            foreach(_:number,Pod:entity = Stepseats){
+                if(Pod:driver() == Ply){
+                    
+                    O = Ply == owner()
+                    
+                    if(->Engineer & Key == "1"){
+                        if(O){
+                            Engineer:ejectPod()
+                            Ply:plyExitVehicle()
+                            Ply:plyEnterVehicle(Engineer)
+                        }elseif(!Engineer:driver()){
+                            Ply:plyExitVehicle()
+                            Ply:plyEnterVehicle(Engineer)
+                        }else{
+                            Pod:printDriver("Cannot warp to the Engineer seat because it is occupied!")
+                        }
+                    }
+                    
+                    if(->Conductor & Key == "2"){
+                        if(O){
+                            Conductor:ejectPod()
+                            Ply:plyExitVehicle()
+                            Ply:plyEnterVehicle(Conductor)
+                        }elseif(!Conductor:driver()){
+                            Ply:plyExitVehicle()
+                            Ply:plyEnterVehicle(Conductor)
+                        }else{
+                            Pod:printDriver("Cannot warp to the Conductor seat because it is occupied!")
+                        }
+                    }
+                    
+                    if(->Brakeman & Key == "3"){
+                        if(O){
+                            Brakeman:ejectPod()
+                            Ply:plyExitVehicle()
+                            Ply:plyEnterVehicle(Brakeman)
+                        }elseif(!Brakeman:driver()){
+                            Ply:plyExitVehicle()
+                            Ply:plyEnterVehicle(Brakeman)
+                        }else{
+                            Pod:printDriver("Cannot warp to the Brakeman seat because it is occupied!")
+                        }
+                    }
+                    
+                    
+                }
+            }
+        }
+    }
+}
