@@ -1,0 +1,279 @@
+@name shitbox/FEC 427 Horn & Bell E2
+@inputs Horn Bell MainRes Locomotive:entity CStand:entity Number:string
+@outputs [StartSound EndSound]:string
+@persist SoundDis EchoDis
+@persist MainRes PitchDefault FullPitchPct
+@persist StartFadeTime EndFadeTime FadeTimer ResumeTime
+@persist ShortHitTime ShortQ
+@persist Conductor:entity
+#@model models/gsgtrainprops/parts/horns/leslie_a200.mdl
+@model models/gsgtrainprops/parts/horns/leslie_rs3l.mdl
+#@model models/gsgtrainprops/parts/horns/leslie_rs5t.mdl
+#@model models/props_bennjo/bigboy_whistle.mdl
+
+#Welcome to FEC 427 Horn E2. By FEC 427/Tree Demoman/Tree Pyro
+#Modified from an unnamed "whistle test" E2 made by griggs, then provided to me by Seaboard
+
+if(dupefinished()){reset()}
+if(first()){
+    
+    #/////////////////////////////////////////////////////////////////////////////#
+    #//////////////////////////Start of config////////////////////////////////////#
+    #/////Some of the code below might be complex before the end of the config///.#
+    #/Do not stop until you see a big block like this one that says End of config/#
+    #/The place that you actually put sounds is at the very bottom of the config./#
+    #/////////////////////////////////////////////////////////////////////////////#
+    
+    #Change the color of the horn prop.
+    #For some reason, this is necessary.
+    entity():setColor(vec(250,165,75))
+    
+    #In between the quotes, the steam ID of the player who is working as the conductor on your train.
+    #They will be able to hear the horn regardless of distance. Useful if you are using the horn for communications.
+    Conductor = findPlayerBySteamID("")
+    
+    #In decibels, how far away your horn can be heard. Default 80.
+    #Please for the love of GOD do NOT set this above  90. Don't set it to 0 either.
+    SoundDis = 80 
+    
+    #In Decibels, how far away your horn echoes. Default 120.
+    #Please for the love of GOD do NOT set this above 120. Don't set it to 0 either.
+    EchoDis = 120 
+    
+    #The pitch of the horn
+    PitchDefault = 100
+    #What should MainRes be when the horn's pitch is at its default value?
+    FullPitchPct = 135
+    
+    #How long it takes (In seconds) for the loop sound to fade out. Default 0.2
+    StartFadeTime = 0.3
+    #How long it takes for the end sound to fade in. Default 0.2
+    EndFadeTime = 0.3
+    
+    #Amount of time within finishing a horn blow that you can sound it again without restarting the loop sound.
+    #Default 0.5. Should not be any lower than StartFadeTime. Can be disabled with 0.
+    #Use higher values if the horn has a noticeably different tone at the start than the full loop (such as RS3Ls, P3s, RS3Ks)
+    FadeTimer = 0.4
+    #How long it takes for the loop sound to come to full volume again, if the horn is sounded within the FadeTimer value. Default 0.1
+    ResumeTime = 0.1
+    
+    #If you let go of the horn in less than X seconds after beginning the blast, the horn will quickly fade instead of its usual behavior.
+    ShortHitTime = 0.7
+    
+    #How quickly the loop sound fades out after a short hit.
+    ShortHitFade = 0.3
+    
+    #Whether or not the horn E2 should use a random sound
+    RandomizeHorn = 1
+    
+    #The horns that the E2 uses if RandomizeHorn is set to 1.
+    local RandomHorns = array(
+    "2",
+    "10",
+    "14",
+    "16",
+    "21",
+    "23",
+    "28",
+    "29",
+    "32",
+    "34",
+    "38",
+    "41",
+    "43",
+    "44",
+    "45",
+    "46",
+    "48"
+    )
+    
+    #Optional. You can use this to quickly choose multiple horns if you're exclusively using one pack.
+    let Filepath = "traincraft101trainsounds/horns/rs3l_"
+    
+    #The end of the sound path that is the same across all loop sounds.
+    #If you're not using this, it can be substuted with ".wav" or "".
+    let StartSuffix = "_loop.wav"
+    
+    #Same as above, but for end sounds. You can still substitute it with ".wav" or "" if you're not using it.
+    let EndSuffix = "_end.wav"
+    
+    #The config continues, but don't touch this line
+    if(!RandomizeHorn){
+        
+    #The looping sound that your horn uses, if RandomizeHorn is set to 0.
+    StartSound = "traincraft101trainsounds/horns/p5_16"
+    #The end sound that your horn uses, if RandomizeHorn is set to 0
+    EndSound = "traincraft101trainsounds/horns/p5_16"
+    
+    OldBell = randint(0,1)
+        
+        
+        
+        
+        
+    #/////////////////////////////////////////////////////////////////////////////#
+    #////////////////////////////End of config////////////////////////////////////#
+    #/////Do not touch anything below this line unless you know what you're doing.#
+    #/////////////////////////////////////////////////////////////////////////////#
+    
+    }else{
+        let Rand = random(1,RandomHorns:count())
+    StartSound = Filepath + RandomHorns[Rand,string] + StartSuffix
+    EndSound = Filepath + RandomHorns[Rand,string] + EndSuffix
+    }
+    
+    if(RandomizeHorn & ->Horn & ->Locomotive){
+        printColor(vec(0,161,255),"FEC 427 Horn E2:",vec(255),(->Number ? (" Randomized horn sound on Engine " + Number + " is: ") : (" Randomized horn sound is: ")),StartSound," and OldBell = ",OldBell)
+        owner():soundPlay(100,0,StartSound)
+        timer(1,function(){
+            soundStop(100,StartFadeTime)
+            owner():soundPlay(101,0,EndSound)
+            soundVolume(101,0)
+            soundVolume(101,1,EndFadeTime)
+        })
+    }
+}
+
+if(!->MainRes){
+    MainRes = 140
+}
+
+if(!->Locomotive){
+    Locomotive = entity()
+}
+
+if(!->CStand){
+    CStand = entity()
+}
+
+
+if(~Horn & Horn){
+    CStand:soundPlay(100,0,"titus's locomotive sound expansion pack/resources/sd40-2/cab/controls/hornlever/s_sd40hornstickona01.wav")
+    
+    if(!timerExists("fadetime")){
+        soundPlay(1,0,StartSound)
+        Locomotive:soundPlay(2,0,StartSound)
+        Conductor:soundPlay("conductor1",0,StartSound)
+        soundLevel(1,SoundDis)
+        soundLevel(2,EchoDis)
+        soundDSP(1,0)
+        soundDSP(2,16)
+        soundDSP("conductor1",16)
+        soundLevel("conductor1",15)
+        soundVolume("conductor1",0.5)
+    }else{
+        stoptimer("fadetime")
+        soundVolume(1,1,ResumeTime)
+        soundVolume(2,1,ResumeTime)
+        soundVolume("conductor1",1,ResumeTime)
+        soundStop(3,ResumeTime)
+        soundStop(4,ResumeTime)
+        soundStop("conductor2")
+    }
+    soundPlay("Air",0,"")
+    soundVolume("Air",0.2)
+    soundPitch("Air",100)
+    #soundPitch(1,Pitch)
+    #soundPitch(2,Pitch)
+    #soundPitch("conductor1",Pitch)
+    
+    ShortQ = 1
+    timer("shorthit",ShortHitTime,function(){
+        ShortQ = 0
+    })
+}
+
+if(~Horn & !Horn & !(first()|dupefinished())){
+    if(!ShortQ){
+        let Ratio = MainRes/FullPitchPct
+        soundVolume(1,0,StartFadeTime)
+        soundVolume(2,0,StartFadeTime)
+        soundVolume("conductor1",0,StartFadeTime)
+        soundStop("Air",0.2)
+        soundPlay(100,0,"titus's locomotive sound expansion pack/resources/sd40-2/cab/controls/hornlever/s_sd40hornleverhiss.wav")
+        
+        soundPlay(3,soundDuration(EndSound),EndSound)
+        Locomotive:soundPlay(4,soundDuration(EndSound),EndSound)
+        Conductor:soundPlay("conductor2",soundDuration(EndSound),EndSound)
+        soundDSP(3,0)
+        soundDSP(4,16)
+        soundDSP("conductor2",16)
+        soundLevel(3, SoundDis)
+        soundLevel(4, EchoDis)
+        soundLevel("conductor2", 15)
+        soundVolume(3,0)
+        soundVolume(4,0)
+        soundVolume("conductor2",0)
+        soundVolume(3,Ratio,EndFadeTime)
+        soundVolume(4,Ratio,EndFadeTime)
+        soundVolume("conductor2",Ratio,EndFadeTime)
+        timer("fadetime",FadeTimer,function(){})
+    }else{
+        soundVolume(1,0.01,ShortHitFade)
+        soundVolume(2,0.01,ShortHitFade)
+        soundVolume("conductor1",0.01,ShortHitFade)
+        soundStop("Air",0.2)
+        soundPlay(100,0,"titus's locomotive sound expansion pack/resources/sd40-2/cab/controls/hornlever/s_sd40hornleverhiss.wav")
+    }
+        
+
+}
+
+if((~MainRes|~Horn) & Horn & ->MainRes){
+    let Ratio = MainRes/FullPitchPct
+    local Pitch = PitchDefault*Ratio
+    
+    soundPitch(1,Pitch)
+    soundPitch(2,Pitch)
+    soundPitch(3,Pitch)
+    soundPitch(4,Pitch)
+    soundPitch("conductor1",Pitch)
+    soundPitch("conductor2",Pitch)
+    
+    soundVolume(1,Ratio)
+    soundVolume(2,Ratio)
+    soundVolume(3,Ratio)
+    soundVolume(4,Ratio)
+    soundVolume("conductor1",Ratio)
+    soundVolume("conductor2",Ratio)
+}
+    
+
+if(~Bell & Bell){
+    soundPlay(11,0,"gsgtrainsounds/bells/emd_8004156_bronze_bell_loop4.wav")
+    Locomotive:soundPlay(12,0,"gsgtrainsounds/bells/emd_8004156_bronze_bell_loop4.wav")
+    soundDSP(11,0)
+    soundDSP(12,16)
+    soundPlay("Air",0,"")   
+    soundLevel(11, SoundDis)
+    soundLevel(12, EchoDis)
+    soundVolume(11,0.5)
+    soundVolume(12,0.5)
+    soundVolume("Air",0.2)
+    soundPitch("Air",100)
+    soundPitch(11,100)
+    soundPitch(12,100)
+}
+
+if(~Bell & !Bell){
+    soundPlay(11,0,"gsgtrainsounds/bells/emd_8004156_bronze_bell_end4.wav")
+    Locomotive:soundPlay(12,0,"gsgtrainsounds/bells/emd_8004156_bronze_bell_end4.wav")
+    soundDSP(11,0)
+    soundDSP(12,16)
+    soundPlay("Air",0,"")   
+    soundLevel(11, SoundDis)
+    soundLevel(12, EchoDis)
+    soundVolume(11,0.5)
+    soundVolume(12,0.5)
+    soundVolume("Air",0.2)
+    soundPitch("Air",100)
+    soundPitch(11,100)
+    soundPitch(12,100)
+}
+
+#[
+if(~Bell & !Bell){
+    soundStop(11,1)
+    soundStop(12,1)
+}
+]#

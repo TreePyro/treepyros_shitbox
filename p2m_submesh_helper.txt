@@ -1,0 +1,116 @@
+@name shitbox/P2M submesh helper
+@inputs 
+@outputs T:array
+@persist [O P2M]:entity Model:string Count I BgMask
+@trigger none 
+@strict
+
+if(dupefinished()){selfDestruct()}
+
+#DOCUMENTATION
+#T is the submesh indexes that HAVE BEEN selected
+#I is the subhes index that IS BEING DISPLAYED in either GREEN or RED
+
+#Prop2mesh indexes
+#1: Currently displayed submesh
+#2: Submeshes that have been selected
+#3: Submeshes that have not been selected
+
+
+if(first()){
+    
+    #Paste what "prop2mesh_debug_bodygroups" prints in chat and plug here, then copy its contents into the according variables below.
+    "model: models/est/locmotives/emd/sd40-2/emd_sd40-2_rads.mdl bodygroup-mask: 37 submesh-count: 13"
+    
+    Model = "models/est/locmotives/emd/sd40-2/emd_sd40-2_rads.mdl"
+    BgMask = 37
+    Count = 13
+    
+    O = owner()
+    I = 0
+    E = entity()
+    T = array()
+    P2M = p2mCreate(2,E:pos(),E:angles())
+    
+    P2M:p2mSetParent(E)
+    P2M:p2mPushModel(1,Model,vec(0),ang(0))
+    P2M:p2mBuild()
+    for(X=1,Count){
+        T[X,number] = 0
+    }
+}
+
+function rebuild(){
+    P2M:p2mRemove()
+    P2M = p2mCreate(2,E:pos(),E:angles())
+    let Meshes = array()
+    for(X=1,Count){
+        if(T[X,number] == 0){
+            Meshes:pushNumber(X)
+        }
+    }
+    if(T:exists(I)){Meshes:pushNumber(I)}
+    P2M:p2mPushModel(1,Model,Meshes,vec(0),ang(0),0,0,BgMask)
+    P2M:p2mSetColor(1,vec(255))
+    P2M:p2mSetMaterial(1,"debug/debugdrawflat")
+    P2M:setAlpha(200)
+    P2M:setRenderMode(3)
+    
+    let OtherMeshes = array()
+    for(X=1,Count){
+        if(X!=I){
+            OtherMeshes:pushNumber(X)
+        }
+    }
+    P2M:p2mPushModel(2,Model,OtherMeshes,vec(0),ang(0),0,0,BgMask)
+    P2M:p2mSetColor(2,T[I,number] ? vec(0,255,0) : vec(255,0,0))
+    P2M:p2mSetMaterial(2,"debug/debugdrawflat")
+    
+    P2M:p2mBuild()
+}
+
+event keyPressed(Ply:entity,Key:string,Down:number,Bind:string){
+    if(Ply==O & Ply:weapon():getClass() == "weapon_357" & Down){
+        #Save/unsave submesh index into table
+        if(Bind == "attack"){
+            T[I,number] = !T[I,number]
+            rebuild()
+            print((T[I,number] ? "Added" : "Removed") + " submesh " + I + " to list of submeshes.")
+        }
+        #Save submesh setting and move to next submesh
+        if(Bind == "attack2"){
+            I++
+            if(I>Count){I=1}
+            rebuild()
+        }
+        
+        #Save submesh setting and move to previous submesh
+        if(Key == "r"){
+            I--
+            if(I<1){I=Count}
+            rebuild()
+        }
+        if(changed(I)){
+            print("Submesh " + I)
+        }
+    }
+}
+
+event chat(Ply:entity,Msg:string,_:number){
+    if(Ply == O & Msg[1] == "."){
+        hideChat(1)
+        let Exp = Msg:explode(" ")
+        if(Exp[1,string] == ".compile"){
+            let Array = array()
+            for(X=1,Count){
+                if(T[X,number]==0){
+                    Array:pushNumber(X)
+                }
+            }
+            print("Submeshes = " + Array:toString():replace(" ",""))
+        }
+        if(Exp[1,string] == ".restart"){
+            reset()
+        }
+    }
+}

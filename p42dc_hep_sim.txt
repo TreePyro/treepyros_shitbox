@@ -1,0 +1,91 @@
+@name shitbox/P42DC HEP sim
+@inputs E:entity HEPOn Notch EngineSpeed1
+@outputs CtlTableOut:table On
+@persist BassVolumeMax BassVolumeMin
+@persist LastNotch BassVolume BassPitch BassPitchMul BassLevel
+@persist HEPVolume HEPLevel HEPPitch HEPThrottle
+@persist [Bass HEPSound TransitionPath]:string 
+@persist SoundDurations:table
+@persist [UpDelays DownDelays]:array
+
+if(first()|dupefinished()){
+    #include "ptgamma/engines/GE_7FDL16AE"
+    
+    Bass = "vroom/bass.wav"
+    
+    BassVolumeMax = 1 #How loud the bass is when revving
+    BassVolume = 0.75 #How loud the bass is when idle
+    BassVolumeMin = 0.25 #How loud the bass is when de-revving
+    
+    BassPitch = 65 #What pitch should the bass be when the engine is idling?
+    BassPitchMul = 5 #How much should the bass increment for each engine notch?
+    BassLevel = 95 #In Decibels, how far do you want the bass to be heard?
+    
+    HEPSound = "wam98_sounds/trains/miscellaneous/ge_gdy76_blower_p42dc.wav"
+    HEPVolume = 0.4
+    HEPLevel = 90
+    HEPPitch = 100
+    HEPThrottle = 3
+    
+    LastNotch = max(EngineSpeed1,3)
+}
+
+if((~HEPOn & changed(HEPOn>0))|first()){
+    if(HEPOn){
+        E:soundPlay("blower",0,HEPSound)
+        soundLevel("blower",HEPLevel)
+        soundVolume("blower",0)
+        soundPitch("blower",40)
+        
+        E:soundPlay("bass",0,Bass)
+        soundVolume("bass",BassVolume)
+        soundLevel("bass",BassLevel)
+        soundPitch("bass",0)
+        
+        #Add together the sound durations of all transitions from 0 to 3
+        let Timer = first() ? 0 : (SoundDurations[TransitionPath + "up/0-1.wav",number] + SoundDurations[TransitionPath + "up/1-2a.wav",number] + UpDelays[2,number] + SoundDurations[TransitionPath + "up/2-3b.wav",number])/1000
+        #print(Timer)
+        soundPitch("bass",BassPitch + (BassPitchMul*HEPThrottle),Timer)
+        timer(Timer/4,function(){
+            soundVolume("blower",HEPVolume,Timer*0.75)
+            soundPitch("blower",HEPPitch,Timer*0.75)
+        })
+        timer(Timer,function(){On = 1})
+    }else{
+        On = 0
+        let Timer = first() ? 0 : (SoundDurations[TransitionPath + "down/3-2a.wav",number] + DownDelays[6,number] + SoundDurations[TransitionPath + "down/2-1b.wav",number] + SoundDurations[TransitionPath + "down/1-0.wav",number])/1000
+        #print(Timer)
+        soundPitch("blower",0,Timer)
+        soundPitch("bass",0,Timer)
+        soundStop("blower",Timer)
+        soundStop("bass",Timer)
+    }
+}
+
+if((~EngineSpeed1|first()) & On){
+    let ESpeed = EngineSpeed1
+    let Snd = LastNotch < ESpeed ? (TransitionPath + "up/" + LastNotch + "-" + ESpeed + "b.wav") : (TransitionPath + "down/" + LastNotch + "-" + ESpeed + "b.wav")
+    let Timer = SoundDurations[Snd,number]/1000
+    #print(Snd)
+    #print(SoundDurations[Snd,number]/1000)
+    #print(LastNotch)
+    #print(ESpeed)
+    
+    #Throttling down
+    if(LastNotch>ESpeed){
+        soundVolume("bass",BassVolumeMin,Timer*0.2)
+        if(ESpeed <= Notch){
+            soundVolume("bass",BassVolume,Timer*0.8)
+        }
+    }
+    
+    #Throttling up
+    if(LastNotch<ESpeed){
+        soundVolume("bass",BassVolumeMax,Timer*0.2)
+        if(ESpeed >= Notch){
+            soundVolume("bass",BassVolume,Timer*0.8)
+        }
+    }
+    soundPitch("bass",BassPitch + (ESpeed*BassPitchMul),Timer)
+    LastNotch = max(ESpeed,3)
+}

@@ -1,0 +1,117 @@
+@name shitbox/masterplanner/c&o_gp38
+@inputs Base:entity
+@outputs Number:string
+@persist A P2M:entity
+@trigger 
+@strict
+A = 0
+P2M = entity()
+Number = select(randint(1,2),randint(3850,3899),randint(4820,4829)):toString()
+
+function entity section(Clips:table, Color:vector){
+    Base:setAlpha(0)
+    A++
+    holoCreate(A,Base:pos(),vec(1),Base:angles(),Color,"models/gsgtrainprops/trains/propper/emd_gp38.mdl")
+    holoParent(A,Base)
+    
+    foreach(ClipID:number,Clip:table = Clips){
+        holoClipEnabled(A,ClipID,1)
+        if(     Clip:exists("dir") & !Clip:exists("ang")){
+            holoClip(A,ClipID,Clip["pos",vector],Clip["dir",vector],0)
+        }elseif(Clip:exists("ang") & !Clip:exists("dir")){
+            holoClip(A,ClipID,Clip["pos",vector],Clip["ang",angle]:up(),0)
+        }elseif(Clip:exists("dir") & Clip:exists("ang")){
+            print("MasterPlanner rendering error (Holo Index " + A + "): Clip tables must have a ''clip'' OR ''dir'' value. NEVER BOTH!")
+        }
+    }
+    
+    let E = holoEntity(A)
+    
+    foreach(X:number,_:string = Base:getMaterials()){
+        E:setSubMaterial(X,Base:getSubMaterial(X))
+    }
+    
+    for(X=1,32){
+        E:setBodygroup(X,Base:getBodygroup(X))
+    }
+    return E
+}
+
+function array text2d(Info:table){
+    #IMPORTANT DISTINCTION TO MAKE HERE
+    #Variable "A" is the global variable for the holo indexes
+    #Variable "I" is the letter being worked on in this function
+    #Thank you for your time
+    let Text = Info["string",string]
+    let Font = Info["font",string]
+    let Spacing = Info["spacing",number]
+    let Output = array()
+    
+    holoCreate(-5919531)
+    holoPos(-5919531,Base:toWorld(Info["pos",vector]))
+    holoAng(-5919531,Base:toWorld(Info["ang",angle]))
+    let Ref = holoEntity(-5919531)
+    
+    for(I=1,Text:length()){
+        A++
+        holoCreate(A)
+        Output:pushEntity(holoEntity(A))
+        holoParent(A,Base)
+        holoPos(A,Ref:toWorld(vec(0,(Spacing*I)-((Text:length()/2)*Spacing)-(Spacing/2),0)))
+        holoAng(A,Ref:toWorld(ang(0)))
+        holoMaterial(A,Font+Text[I])
+        holoModel(A,"models/holograms/plane.mdl")
+        holoScale(A,Info["scale",vector])
+        holoColor(A,Info["color",vector])
+    }
+    
+    holoDelete(-5919531)
+    #Other functions return individual holo entities. This one returns an array of holo entities.
+    return Output
+}
+
+function entity holo(Info:table){
+    A++
+    holoCreate(A,Base:toWorld(Info["pos",vector]),Info["scale",vector],Base:toWorld(Info["ang",angle]),Info["color",vector],Info["model",string])
+    holoAlpha(A,Info["alpha",number])
+    holoParent(A,Base)
+    return holoEntity(A)
+}
+    
+function p2mpush(Info:table){
+    P2M:p2mPushModel(Info["index",number],Info["model",string],Info["submesh",array],Info["pos",vector],Info["ang",angle],Info["scale",vector],0,0,Info["bodygroup",number],Info["clips",array])
+}
+
+
+if(->Base){
+    
+    #/////////////////////////////////////////
+    #/////// BEGIN CREATING SCHEME////////////
+    #/////////////////////////////////////////
+
+
+
+    #/////////////////////////////////////////
+    #//////// STOP CREATING SCHEME ///////////
+    #/////////////////////////////////////////
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    print("Masterplanner: Successfully created " + A + " holos.")
+}else{
+    print("Masterplanner: You need to wire the E2's ''Base[ENTITY]'' input to a locomotive for it to work.")
+}
