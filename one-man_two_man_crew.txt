@@ -1,7 +1,7 @@
 @name shitbox/one-man two man crew
 @inputs EngineerSeat:entity Teleport Enable
-@outputs [O ConductorSeat]:entity ConductorPos:table Toggle
-@persist [ConductorModel StandAnim AirAnim AttachmentName]:string LockPod
+@outputs [O ConductorSeat]:entity ConductorPos:table 
+@persist [ConductorModel StandAnim AirAnim SitAnim AttachmentName]:string LockPod ShowConductor AnimOverrides:table
 
 
 if(first()|dupefinished()){
@@ -12,9 +12,9 @@ if(first()|dupefinished()){
     This E2 can be found in the Tree Pyro's Shitbox Github repo:
     https://github.com/TreePyro/treepyros_shitbox
     
-    This E2 works but teleporting you to the Engineer Seat whenever you're not in it
-    It also records the position you were at when you teleported, as well as what seat you were in
-    A holo model is placed where the aforementioned recorded position is
+    This E2 works by teleporting you to the Engineer Seat when you use Teleport while not in the seat.
+    It also records the position you were at when you teleported, as well as what seat you were in.
+    A holo model may also be placed where the aforementioned recorded position is.
     
     To set this up: All you need to do is place this e2 literally anywhere.
     ->Wire "EngineerSeat" to the seat that you drive your vehicle from
@@ -24,16 +24,31 @@ if(first()|dupefinished()){
     
 ]#
 
-
-    #If you'd like, you can also change the model that the "conductor" uses here:
+    #Enable or disable the conductor holo
+    #Default 1
+    ShowConductor = 1
+    
+    #The model that the conductor uses
+    #Default: models/player/group03/male_07.mdl
     ConductorModel = "models/player/group03/male_07.mdl"
     
     #And you can also set the animations your conductor uses here:
     StandAnim = "idle_all_01"
     AirAnim = "swim_idle_all"
+    SitAnim = "sit"
     
     #Set this to 1 if you don't want your conductor's seat to be used whenever he's riding it.
-    LockPod = 1
+    #MAY BE BUGGY
+    LockPod = 0
+    
+    #You can also use this table to set individual animations for different seat models.
+    #If the conductor is in a seat not described here, he will use SitAnim instead.
+    AnimOverrides = table(
+        "models/trakpak3_common/vehicles/footprints.mdl" = StandAnim,
+        "models/magtrainslocos/cabseats/footplate.mdl" = StandAnim,
+        "models/chairs_playerstart/standingpose.mdl" = StandAnim
+    )
+        
     
     #You absolutely should not change anything below this line unless you know what you're doing.
     
@@ -49,16 +64,17 @@ if(first()|dupefinished()){
     
     AttachmentName = "vehicle_feet_passenger0"
     O = owner()
-    ConductorSeat = noentity()
+    ConductorSeat = _NO_ENTITY
     ConductorPos = table(
         "pos" = O:pos(),
         "ang" = O:angles()
     )
-    Toggle = 0
     
-    holoCreate(0)
-    holoModel(0,ConductorModel)
-    holoPos(0,vec(0))
+    if(ShowConductor){
+        holoCreate(0)
+        holoModel(0,ConductorModel)
+        holoPos(0,vec(0))
+    }
 }
 
 event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
@@ -68,21 +84,29 @@ event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
                 ConductorSeat = O:vehicle()
                 ConductorSeat:lockPod(LockPod)
                 ConductorPos = table(
-                    "pos" = O:vehicle():pos(),
-                    "ang" = O:vehicle():angles(),
+                    "pos" = ConductorSeat:pos(),
+                    "ang" = ConductorSeat:toWorld(ang(0,-90,0)),
                     "noclip" = 0
                 )
                 
                 holoPos(0,ConductorSeat:attachmentPos(AttachmentName))
                 holoParentAttachment(0,ConductorSeat,AttachmentName)
-                holoAng(0,ConductorSeat:attachmentAng(AttachmentName))
-                holoAnim(0,"sit")
+                holoAng(0,ConductorSeat:toWorld(ang(0,90,0)))
+                
+                if(ShowConductor){
+                    let Mdl = ConductorSeat:model()
+                    if(AnimOverrides:exists(Mdl)){
+                        holoAnim(0,AnimOverrides[Mdl,string])
+                    }else{
+                        holoAnim(0,SitAnim)
+                    }
+                }
                 
                 O:plyExitVehicle()
                 O:plyEnterVehicle(EngineerSeat)
             }else{
-                ConductorSeat:lockPod(0)
-                ConductorSeat = noentity()
+                #ConductorSeat:lockPod(0)
+                ConductorSeat = _NO_ENTITY
                 ConductorPos = table(
                     "pos" = O:pos(),
                     "ang" = O:angles(),
@@ -90,10 +114,12 @@ event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
                 )
                 O:plyEnterVehicle(EngineerSeat)
                 
-                holoUnparent(0)
-                holoPos(0,ConductorPos["pos",vector])
-                holoAng(0,ConductorPos["ang",angle]:setRoll(0))
-                holoAnim(0,O:isOnGround() ? StandAnim : AirAnim)
+                if(ShowConductor){
+                    holoUnparent(0)
+                    holoPos(0,ConductorPos["pos",vector])
+                    holoAng(0,ConductorPos["ang",angle]:setRoll(0))
+                    holoAnim(0,O:isOnGround() ? StandAnim : AirAnim)
+                }
             }
         }else{
             holoPos(0,vec(0))
@@ -108,4 +134,8 @@ event keyPressed(Ply:entity, Key:string, Dn:number, _:string){
             }
         }
     }
+}
+
+if(~Enable & !Enable){
+    holoDelete(0)
 }
