@@ -1,4 +1,4 @@
-@name shitbox/FEC 427 Horn & Bell E2
+@name shitbox/complex/FEC 427 Horn & Bell E2
 @inputs Horn Bell MainRes Locomotive:entity CStand:entity Number:string
 @outputs [StartSound EndSound]:string
 @persist SoundDis EchoDis
