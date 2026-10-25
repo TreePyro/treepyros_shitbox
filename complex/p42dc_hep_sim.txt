@@ -1,4 +1,4 @@
-@name shitbox/P42DC HEP sim
+@name shitbox/complex/P42DC HEP sim
 @inputs E:entity HEPOn Notch EngineSpeed1
 @outputs CtlTableOut:table On
 @persist BassVolumeMax BassVolumeMin
