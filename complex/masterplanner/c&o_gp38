@@ -1,4 +1,4 @@
-@name shitbox/masterplanner/c&o_gp38
+@name shitbox/complex/masterplanner/c&o_gp38
 @inputs Base:entity
 @outputs Number:string
 @persist A P2M:entity
