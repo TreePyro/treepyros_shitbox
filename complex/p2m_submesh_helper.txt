@@ -1,4 +1,4 @@
-@name shitbox/P2M submesh helper
+@name shitbox/complex/P2M submesh helper
 @inputs 
 @outputs T:array
 @persist [O P2M]:entity Model:string Count I BgMask
