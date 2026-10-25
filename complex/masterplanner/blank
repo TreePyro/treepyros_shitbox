@@ -1,4 +1,4 @@
-@name shitbox/masterplanner/c&o_gp38
+@name shitbox/complex/masterplanner/blank
 @inputs Base:entity
 @outputs Number:string
 @persist A P2M:entity
@@ -11,7 +11,7 @@ Number = select(randint(1,2),randint(3850,3899),randint(4820,4829)):toString()
 function entity section(Clips:table, Color:vector){
     Base:setAlpha(0)
     A++
-    holoCreate(A,Base:pos(),vec(1),Base:angles(),Color,"models/gsgtrainprops/trains/propper/emd_gp38.mdl")
+    holoCreate(A,Base:pos(),vec(1),Base:angles(),Color,"")
     holoParent(A,Base)
     
     foreach(ClipID:number,Clip:table = Clips){
