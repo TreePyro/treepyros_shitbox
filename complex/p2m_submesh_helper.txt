@@ -1,31 +1,75 @@
 @name shitbox/complex/P2M submesh helper
 @inputs 
 @outputs T:array
-@persist [O P2M]:entity Model:string Count I BgMask
+@persist [O P2M]:entity Model:string Count I BgMask Keys:table
 @trigger none 
 @strict
 
 if(dupefinished()){selfDestruct()}
-
-#DOCUMENTATION
-#T is the submesh indexes that HAVE BEEN selected
-#I is the subhes index that IS BEING DISPLAYED in either GREEN or RED
-
-#Prop2mesh indexes
-#1: Currently displayed submesh
-#2: Submeshes that have been selected
-#3: Submeshes that have not been selected
-
-
 if(first()){
+    #[
     
-    #Paste what "prop2mesh_debug_bodygroups" prints in chat and plug here, then copy its contents into the according variables below.
-    "model: models/est/locmotives/emd/sd40-2/emd_sd40-2_rads.mdl bodygroup-mask: 37 submesh-count: 13"
+    Hi my name is The Tree Demoknight and this is my P2M Submesh Helper Tool
+    Please note that this E2 is not yet feature-complete and is subject to change
+    You can make suggestions, bug reports, or contact me via the following methods:
+    -GMail (unreliable): thetreedemoknight@gmail.com
+    -Discord: TheTreeDemoknight
+    -Instagram: @thetreedemoknight
+    -Github: TreePyro
+    -Steam: https://steamcommunity.com/id/railroadnut/
     
-    Model = "models/est/locmotives/emd/sd40-2/emd_sd40-2_rads.mdl"
-    BgMask = 37
-    Count = 13
+    SETUP:
+    Step 1: Spawn the model you're trying to submesh
+    Step 2: Configure the bodygroups to your satisfaction (This is vital!)
+    Step 3: While your crosshair is directed at the model you want to submesh, use the command "prop2mesh_debug_bodygroups"
+    Step 4: While in the console, select the text printed by the command and press Ctrl + C
+    Step 5: In the empty string below, use Ctrl + V, then insert the individual values into the config.
+    ]#
     
+    ""
+    Model = ""
+    BgMask = 0
+    Count = 0
+
+    #[
+    USAGE:
+    Step 1: Spawn the E2 after performing the Setup. A singular mesh should show up with the model being used and all submeshes included.
+    Step 2: While holding the .357, use the "scrollUp" and "scrollDn" keys to view different submeshes, which turn red while viewed.
+    Step 3: For submeshes you want to use, use the "select" key to save it. The mesh should turn green while viewed, and then continue showing up as a white submesh thereafter.
+    Step 4: When you are done viewing and selecting submeshes, use the ".compile" command.
+    Step 5: Copy the contents that the E2 prints and paste it into your paint scheme E2.
+    Step 6: Inside the "p2mPushModel" functions of your paint scheme, insert the "Submeshes" variable as the Array argument.
+    
+    NOTES:
+    - You can configure the E2's keybinds below.
+    - Submeshes are White when selected and not being viewed.
+    - Submeshes are Red when being viewed and not selected.
+    - Submeshes are Green if being viewed while selected.
+    - Submeshes are Invisible when not viewed or selected.
+    ]#
+    
+    Keys = table(
+        "select" = "mouse2",
+        "scrollUp" = "mwheelup",
+        "scrollDn" = "mwheeldn"
+    )
+
+    #/// END OF CONFIG ///#
+    #/// END OF CONFIG ///#
+    #/// END OF CONFIG ///#
+
+
+
+
+    #DOCUMENTATION
+    #T is the submesh indexes that HAVE BEEN selected
+    #I is the submesh index that IS BEING DISPLAYED in either GREEN or RED
+
+    #Prop2mesh indexes
+    #1: Currently displayed submesh
+    #2: Submeshes that have been selected
+
+
     O = owner()
     I = 0
     E = entity()
@@ -69,28 +113,31 @@ function rebuild(){
     P2M:p2mBuild()
 }
 
-event keyPressed(Ply:entity,Key:string,Down:number,Bind:string){
+event keyPressed(Ply:entity,Key:string,Down:number,_:string){
     if(Ply==O & Ply:weapon():getClass() == "weapon_357" & Down){
-        #Save/unsave submesh index into table
-        if(Bind == "attack"){
+        
+        #Save/unsave submesh index in table
+        if(Key == Keys["select",string]){
             T[I,number] = !T[I,number]
+            let P = T[I,number]
             rebuild()
-            print((T[I,number] ? "Added" : "Removed") + " submesh " + I + " to list of submeshes.")
+            print((P ? "Added" : "Removed") + " submesh " + I + " " + (P ? "to" : "from") + " list of submeshes.")
         }
+
         #Save submesh setting and move to next submesh
-        if(Bind == "attack2"){
+        if(Key == Keys["scrollUp",string]){
             I++
             if(I>Count){I=1}
             rebuild()
         }
         
         #Save submesh setting and move to previous submesh
-        if(Key == "r"){
+        if(Keys == Keys["scrollDn",string]){
             I--
             if(I<1){I=Count}
             rebuild()
         }
-        if(changed(I)){
+        if(changed(I) & I){
             print("Submesh " + I)
         }
     }
