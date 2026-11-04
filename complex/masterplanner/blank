@@ -5,13 +5,15 @@
 @trigger 
 @strict
 A = 0
-P2M = entity()
-Number = select(randint(1,2),randint(3850,3899),randint(4820,4829)):toString()
+P2M = _NO_ENTITY
+Number = randint(100,300):toString()
+BaseModel = " "
+BaseModel = Base:model() #Comment out this line if you want to use a different model
 
 function entity section(Clips:table, Color:vector){
     Base:setAlpha(0)
     A++
-    holoCreate(A,Base:pos(),vec(1),Base:angles(),Color,"")
+    holoCreate(A,Base:pos(),vec(1),Base:angles(),Color,BaseModel)
     holoParent(A,Base)
     
     foreach(ClipID:number,Clip:table = Clips){
@@ -40,46 +42,69 @@ function entity section(Clips:table, Color:vector){
 function array text2d(Info:table){
     #IMPORTANT DISTINCTION TO MAKE HERE
     #Variable "A" is the global variable for the holo indexes
-    #Variable "I" is the letter being worked on in this function
+    #Variable "I" is the index for the string's letter that the function is working on
     #Thank you for your time
-    let Text = Info["string",string]
-    let Font = Info["font",string]
-    let Spacing = Info["spacing",number]
-    let Output = array()
-    
-    holoCreate(-5919531)
-    holoPos(-5919531,Base:toWorld(Info["pos",vector]))
-    holoAng(-5919531,Base:toWorld(Info["ang",angle]))
-    let Ref = holoEntity(-5919531)
-    
-    for(I=1,Text:length()){
-        A++
-        holoCreate(A)
-        Output:pushEntity(holoEntity(A))
-        holoParent(A,Base)
-        holoPos(A,Ref:toWorld(vec(0,(Spacing*I)-((Text:length()/2)*Spacing)-(Spacing/2),0)))
-        holoAng(A,Ref:toWorld(ang(0)))
-        holoMaterial(A,Font+Text[I])
-        holoModel(A,"models/holograms/plane.mdl")
-        holoScale(A,Info["scale",vector])
-        holoColor(A,Info["color",vector])
+    if( (Info["text",string] == "" | !(Info:exists("text")) | (Info["font",string] == "" | !(Info:exists("font")) ){
+        let Text = Info["string",string]
+        let Font = Info["font",string]
+        let Scale = Info:exists("scale") ? Info["scale",vector] : vec(1)
+        let Spacing = Info:exists("spacing") ? Info["spacing",number] : 10
+        let Color = Info:exists(
+        
+        let Output = array()
+        
+        holoCreate(-5919531)
+        holoPos(-5919531,Base:toWorld(Info["pos",vector]))
+        holoAng(-5919531,Base:toWorld(Info["ang",angle]))
+        let Ref = holoEntity(-5919531)
+        
+        for(I=1,Text:length()){
+            A++
+            holoCreate(A)
+            Output:pushEntity(holoEntity(A))
+            holoParent(A,Base)
+            holoPos(A,Ref:toWorld(vec(0,(Spacing*I)-((Text:length()/2)*Spacing)-(Spacing/2),0)))
+            holoAng(A,Ref:toWorld(ang(0)))
+            holoMaterial(A,Font+Text[I])
+            holoModel(A,"models/holograms/plane.mdl")
+            holoScale(A,Scale)
+            holoColor(A,Color)
+        }
+        
+        holoDelete(-5919531)
+        #Other functions return individual holo entities. This one returns an array of holo entities.
+        return Output
+    }else{
+        print("Masterplanner: text2d function ignored at index " + A + "; either the ''font'' or ''text'' value is unspecified or empty.)
+        return array()
     }
-    
-    holoDelete(-5919531)
-    #Other functions return individual holo entities. This one returns an array of holo entities.
-    return Output
 }
 
 function entity holo(Info:table){
     A++
-    holoCreate(A,Base:toWorld(Info["pos",vector]),Info["scale",vector],Base:toWorld(Info["ang",angle]),Info["color",vector],Info["model",string])
-    holoAlpha(A,Info["alpha",number])
+    let Sc = Info:exists("scale")
+    let Co = Info:exists("color")
+    holoCreate(A,Base:toWorld(Info["pos",vector]),Sc ? Info["scale",vector] : vec(1),Base:toWorld(Info["ang",angle]),Co ? Info["color",vector] : vec(255),Info["model",string])
     holoParent(A,Base)
+    
+    if(Info:exists("alpha")){
+        holoAlpha(A,Info["alpha",number])
+    }
+    
+    if(Info:exists("material")){
+        holoEntity(A):setMaterial(Info["material",string])
+    }elseif(Info:exists("submaterial")){
+        foreach(X:number,Sub:string = Info["submaterial",table]){
+            holoEntity(A):setSubMaterial(X,Sub)
+        }
+    }
+    
     return holoEntity(A)
 }
     
 function p2mpush(Info:table){
-    P2M:p2mPushModel(Info["index",number],Info["model",string],Info["submesh",array],Info["pos",vector],Info["ang",angle],Info["scale",vector],0,0,Info["bodygroup",number],Info["clips",array])
+    let Md = Info:exists("model")
+    P2M:p2mPushModel(Info["index",number],Md ? Info["model",string] : BaseModel,Info["submesh",array],Info["pos",vector],Info["ang",angle],Info["scale",vector],0,0,Info["bodygroup",number],Info["clips",array])
 }
 
 
@@ -94,24 +119,9 @@ if(->Base){
     #/////////////////////////////////////////
     #//////// STOP CREATING SCHEME ///////////
     #/////////////////////////////////////////
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-    print("Masterplanner: Successfully created " + A + " holos.")
+    
+    if(P2M:isValid()){P2M:p2mBuild()}
+    if(first() & A){print("Masterplanner: Successfully created " + A + " holos.")}
 }else{
     print("Masterplanner: You need to wire the E2's ''Base[ENTITY]'' input to a locomotive for it to work.")
 }
